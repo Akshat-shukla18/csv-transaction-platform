@@ -1,24 +1,29 @@
 "use client";
 
+import { useState } from "react";
 import Papa from "papaparse";
 import { splitRecords } from "@/lib/splitter";
 
 interface Props {
-  rows: any[];
+  validRows: any[];
+  invalidRows?: any[];
 }
 
 export default function SplitDownload({
-  rows,
+  validRows = [],
+  invalidRows = [],
 }: Props) {
 
-  if (rows.length <= 1000) {
-    return null;
-  }
+  const [splitSize, setSplitSize] =
+    useState(1000);
 
-  const handleDownload = () => {
+  const handleValidDownload = () => {
 
     const chunks =
-      splitRecords(rows, 1000);
+      splitRecords(
+        validRows,
+        splitSize
+      );
 
     chunks.forEach(
       (chunk, index) => {
@@ -43,59 +48,298 @@ export default function SplitDownload({
         link.href = url;
 
         link.download =
-          `transactions_part_${index + 1}.csv`;
+          `valid_part_${index + 1}.csv`;
 
-        document.body.appendChild(link);
+        document.body.appendChild(
+          link
+        );
 
         link.click();
 
-        document.body.removeChild(link);
+        document.body.removeChild(
+          link
+        );
 
-        URL.revokeObjectURL(url);
+        URL.revokeObjectURL(
+          url
+        );
+
       }
     );
   };
 
-  const totalParts = Math.ceil(
-    rows.length / 1000
-  );
+  const handleInvalidDownload =
+    () => {
+
+      if (
+        !invalidRows.length
+      ) {
+        return;
+      }
+
+      const chunks =
+        splitRecords(
+          invalidRows,
+          splitSize
+        );
+
+      chunks.forEach(
+        (chunk, index) => {
+
+          const csv =
+            Papa.unparse(chunk);
+
+          const blob =
+            new Blob(
+              [csv],
+              {
+                type:
+                  "text/csv",
+              }
+            );
+
+          const url =
+            URL.createObjectURL(
+              blob
+            );
+
+          const link =
+            document.createElement(
+              "a"
+            );
+
+          link.href = url;
+
+          link.download =
+            `invalid_part_${index + 1}.csv`;
+
+          document.body.appendChild(
+            link
+          );
+
+          link.click();
+
+          document.body.removeChild(
+            link
+          );
+
+          URL.revokeObjectURL(
+            url
+          );
+
+        }
+      );
+    };
+
+  const validParts =
+    Math.max(
+      1,
+      Math.ceil(
+        validRows.length /
+          splitSize
+      )
+    );
+
+  const invalidParts =
+    invalidRows.length > 0
+      ? Math.ceil(
+          invalidRows.length /
+            splitSize
+        )
+      : 0;
 
   return (
     <div
       className="
       glass-card
-      rounded-[24px]
+      rounded-[32px]
       p-6
       mt-6
       "
     >
-      <h3 className="text-xl font-semibold">
-        Large File Detected
-      </h3>
 
-      <p className="text-zinc-400 mt-2">
-        {rows.length.toLocaleString()} valid
-        records will be split into
-        {` ${totalParts} `}
-        downloadable files.
-      </p>
-
-      <button
-        onClick={handleDownload}
+      <h2
         className="
-        mt-4
-        px-6
-        py-3
-        rounded-xl
-        bg-gradient-to-r
-        from-violet-500
-        to-indigo-600
-        hover:scale-105
-        transition
+        text-2xl
+        font-bold
+        mb-6
         "
       >
-        Download Split Files
-      </button>
+        File Processing
+      </h2>
+
+      <div
+        className="
+        grid
+        md:grid-cols-3
+        gap-6
+        "
+      >
+
+        <div
+          className="
+          bg-white/5
+          rounded-2xl
+          p-4
+          "
+        >
+          <p className="text-zinc-400">
+            Split Size
+          </p>
+
+          <select
+            value={splitSize}
+            onChange={(e) =>
+              setSplitSize(
+                Number(
+                  e.target.value
+                )
+              )
+            }
+            className="
+            mt-3
+            w-full
+            bg-white/10
+            rounded-xl
+            p-3
+            "
+          >
+            <option value={500}>
+              500 Rows
+            </option>
+
+            <option value={1000}>
+              1000 Rows
+            </option>
+
+            <option value={2000}>
+              2000 Rows
+            </option>
+
+            <option value={5000}>
+              5000 Rows
+            </option>
+
+          </select>
+
+        </div>
+
+        <div
+          className="
+          bg-white/5
+          rounded-2xl
+          p-4
+          "
+        >
+          <p className="text-zinc-400">
+            Valid Chunks
+          </p>
+
+          <p
+            className="
+            text-3xl
+            font-bold
+            mt-2
+            "
+          >
+            {validParts}
+          </p>
+
+          <p className="text-xs text-zinc-500 mt-2">
+            Based on
+            {" "}
+            {validRows.length}
+            {" "}
+            records
+          </p>
+
+        </div>
+
+        <div
+          className="
+          bg-white/5
+          rounded-2xl
+          p-4
+          "
+        >
+          <p className="text-zinc-400">
+            Invalid Chunks
+          </p>
+
+          <p
+            className="
+            text-3xl
+            font-bold
+            mt-2
+            "
+          >
+            {invalidParts}
+          </p>
+
+          <p className="text-xs text-zinc-500 mt-2">
+            Based on
+            {" "}
+            {invalidRows.length}
+            {" "}
+            records
+          </p>
+
+        </div>
+
+      </div>
+
+      <div
+        className="
+        flex
+        flex-wrap
+        gap-4
+        mt-8
+        "
+      >
+
+        <button
+          onClick={
+            handleValidDownload
+          }
+          className="
+          px-6
+          py-3
+          rounded-xl
+          bg-gradient-to-r
+          from-cyan-500
+          to-blue-600
+          hover:scale-105
+          transition
+          "
+        >
+          Download Valid CSVs
+        </button>
+
+        <button
+          onClick={
+            handleInvalidDownload
+          }
+          disabled={
+            invalidRows.length ===
+            0
+          }
+          className="
+          px-6
+          py-3
+          rounded-xl
+          bg-gradient-to-r
+          from-red-500
+          to-orange-600
+          disabled:opacity-50
+          hover:scale-105
+          transition
+          "
+        >
+          Download Invalid CSVs
+        </button>
+
+      </div>
+
     </div>
   );
 }

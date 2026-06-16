@@ -1,5 +1,5 @@
 "use client";
-
+import { useState } from "react";
 import CsvUploader from "@/components/upload/CsvUploader";
 import StatsGrid from "@/components/dashboard/StatsGrid";
 import CleaningStats from "@/components/dashboard/CleaningStats";
@@ -8,6 +8,9 @@ import Sidebar from "@/components/layout/Sidebar";
 
 import ErrorTable from "@/components/tables/ErrorTable";
 import PreviewTable from "@/components/tables/PreviewTable";
+
+import ColumnSelectorModal
+from "@/components/validation/ColumnSelectorModal";
 
 import CountryChart from "@/components/charts/CountryChart";
 import PaymentChart from "@/components/charts/PaymentChart";
@@ -18,8 +21,7 @@ import Features from "@/components/landing/Features";
 import ValidationRules from "@/components/landing/ValidationRules";
 import OutputGeneration from "@/components/landing/OutputGeneration";
 import SampleCsv from "@/components/landing/SampleCsv";
-import SplitDownload
-from "@/components/dashboard/SplitDownload";
+import SplitDownload from "@/components/dashboard/SplitDownload";
 import { useCsvProcessor } from "@/hooks/useCsvProcessor";
 
 export default function HomePage() {
@@ -32,6 +34,33 @@ export default function HomePage() {
     stats,
     hasUploaded,
   } = useCsvProcessor();
+
+ 
+
+
+  const [uploadedFile,
+setUploadedFile] =
+useState<File | null>(null);
+
+const [detectedColumns,
+setDetectedColumns] =
+useState<string[]>([]);
+
+const [selectedColumns,
+setSelectedColumns] =
+useState<string[]>([]);
+
+const [showModal,
+setShowModal] =
+useState(false);
+
+ const [rowCount, setRowCount] =
+  useState(0);
+
+  const [requiredFields, setRequiredFields] =
+  useState<string[]>([]);
+
+  
 
   return (
     <main
@@ -108,10 +137,87 @@ export default function HomePage() {
 
         {/* Upload Area */}
         <section id = "upload">
-        <CsvUploader
-          onFileSelect={processFile}
-        />
+       <CsvUploader
+  onFileSelect={async (
+    file
+  ) => {
+
+    const text =
+      await file.text();
+
+      const lines =
+  text.split("\n");
+
+setRowCount(
+  Math.max(
+    lines.length - 1,
+    0
+  )
+);
+
+    const firstLine =
+      text
+        .split("\n")[0]
+        .trim();
+
+    const cols =
+      firstLine
+        .split(",")
+        .map(c =>
+          c.trim()
+        );
+
+    setUploadedFile(file);
+
+    setDetectedColumns(
+      cols
+    );
+
+    setSelectedColumns(
+      cols
+    );
+
+    setShowModal(true);
+
+  }}
+/>
         </section>
+        <ColumnSelectorModal
+  isOpen={showModal}
+  fileName={
+    uploadedFile?.name ??
+    ""
+  }
+  rowCount={
+    rowCount
+  }
+  columns={
+    detectedColumns
+  }
+  selectedColumns={
+    selectedColumns
+  }
+  setSelectedColumns={
+    setSelectedColumns
+  }
+  onProcess={() => {
+
+    if (
+      uploadedFile
+    ) {
+
+      processFile(
+        uploadedFile
+      );
+
+      setShowModal(
+        false
+      );
+
+    }
+
+  }}
+/>
 
         {/* Processing State */}
 
@@ -154,24 +260,21 @@ export default function HomePage() {
             <div className="mt-8">
               <StatsGrid metrics={metrics} />
             </div>
+                    <SplitDownload
+  validRows={cleanData}
+  invalidRows={[]}
+/>
 
             <CleaningStats
               stats={stats}
             />
             </section>
-<section id="downloads">
-            <DownloadPanel
-              cleanData={cleanData}
-              errors={errors}
-            />
-            </section>
+
 <section id="distribution">
             <CountryChart
               rows={cleanData}
             />
-            <SplitDownload
-  rows={cleanData}
-/>
+  
 
             <PaymentChart
               rows={cleanData}
@@ -183,11 +286,34 @@ export default function HomePage() {
     rows={cleanData}
   />
 </section>
+<section
+  id="downloads"
+  className="mt-16"
+>
 
+  <h2
+    className="
+    text-3xl
+    font-bold
+    mb-6
+    "
+  >
+    Export Results
+  </h2>
+
+  <DownloadPanel
+    cleanData={cleanData}
+    errors={errors}
+  />
+
+  
+
+</section>
            <section id="errors">
   <ErrorTable
     errors={errors}
   />
+   
 </section>
           </>
         )}

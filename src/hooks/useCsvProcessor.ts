@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { parseCsv } from "@/lib/parser";
+import { normalizeRecord}from "@/lib/schemaResolver";
 import { cleanTransactions } from "@/lib/cleaner";
 import { validateTransactions } from "@/lib/validator";
 
@@ -26,6 +27,9 @@ export function useCsvProcessor() {
     useState<DashboardMetrics | null>(null);
 const [hasUploaded, setHasUploaded] =
   useState(false);
+  const [invalidData,
+setInvalidData] =
+useState<any[]>([]);
   const processFile = useCallback(
     async (file: File) => {
 
@@ -33,12 +37,17 @@ const [hasUploaded, setHasUploaded] =
 
       try {
       setHasUploaded(true);
-        const parsed = await parseCsv(file);
+       const parsed =
+  await parseCsv(file);
 
-        setRawData(parsed);
+const normalized =
+  parsed.map(
+    normalizeRecord
+  );
+  setRawData(normalized);
 
         const cleanedResult =
-          cleanTransactions(parsed);
+          cleanTransactions(normalized);
 
         setStats(cleanedResult.stats);
 
@@ -102,8 +111,10 @@ const [hasUploaded, setHasUploaded] =
     processFile,
     rawData,
     cleanData,
+        invalidData,
     errors,
     stats,
     metrics
+    
   };
 }
