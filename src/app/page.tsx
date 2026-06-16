@@ -1,65 +1,198 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import CsvUploader from "@/components/upload/CsvUploader";
+import StatsGrid from "@/components/dashboard/StatsGrid";
+import CleaningStats from "@/components/dashboard/CleaningStats";
+import DownloadPanel from "@/components/dashboard/DownloadPanel";
+import Sidebar from "@/components/layout/Sidebar";
+
+import ErrorTable from "@/components/tables/ErrorTable";
+import PreviewTable from "@/components/tables/PreviewTable";
+
+import CountryChart from "@/components/charts/CountryChart";
+import PaymentChart from "@/components/charts/PaymentChart";
+
+import HeroStats from "@/components/landing/HeroStats";
+import HowItWorks from "@/components/landing/HowItWorks";
+import Features from "@/components/landing/Features";
+import ValidationRules from "@/components/landing/ValidationRules";
+import OutputGeneration from "@/components/landing/OutputGeneration";
+import SampleCsv from "@/components/landing/SampleCsv";
+import SplitDownload
+from "@/components/dashboard/SplitDownload";
+import { useCsvProcessor } from "@/hooks/useCsvProcessor";
+
+export default function HomePage() {
+  const {
+    loading,
+    processFile,
+    metrics,
+    cleanData,
+    errors,
+    stats,
+    hasUploaded,
+  } = useCsvProcessor();
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <main
+      className="
+      min-h-screen
+      bg-gradient-to-br
+      from-slate-950
+      via-indigo-950
+      to-slate-950
+      text-white
+      p-8
+    "
+    >
+     <Sidebar
+  hasUploaded={hasUploaded}
+/>
+      <div
+  className="
+  ml-72
+  max-w-7xl
+  "
+>
+
+        {/* Header */}
+
+        <div className="mb-8">
+          <h1
+            className="
+            text-6xl
+            font-black
+            bg-gradient-to-r
+            from-cyan-400
+            via-violet-400
+            to-indigo-400
+            bg-clip-text
+            text-transparent
+            "
+          >
+            CSV's Transaction
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+
+          <p className="text-zinc-400 mt-2">
+            Transaction Validation & Processing Platform
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+
+        {/* Feature Banner */}
+
+        {!hasUploaded && (
+          <div
+            className="
+            glass-card
+            rounded-[32px]
+            p-6
+            mb-8
+            bg-gradient-to-r
+            from-cyan-500/10
+            via-violet-500/10
+            to-indigo-500/10
+            "
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+            <h2 className="text-2xl font-bold">
+              Clean • Validate • Analyze • Export
+            </h2>
+
+            <p className="text-zinc-400 mt-2">
+              Upload transaction CSV files, automatically clean
+              data, validate records, generate analytics,
+              export validated datasets and split large files
+              into downloadable chunks.
+            </p>
+          </div>
+        )}
+
+        {/* Upload Area */}
+        <section id = "upload">
+        <CsvUploader
+          onFileSelect={processFile}
+        />
+        </section>
+
+        {/* Processing State */}
+
+        {loading && (
+          <div
+            className="
+            mt-6
+            rounded-xl
+            bg-white/5
+            p-4
+            "
+          >
+            Processing CSV...
+          </div>
+        )}
+
+        {/* Landing Sections */}
+
+        {!hasUploaded && (
+          <>
+            <HeroStats />
+
+            <HowItWorks />
+
+            <Features />
+
+            <ValidationRules />
+
+            <OutputGeneration />
+
+            <SampleCsv />
+          </>
+        )}
+
+        {/* Dashboard */}
+
+        {hasUploaded && (
+          <>
+          <section id ="analytics">
+            <div className="mt-8">
+              <StatsGrid metrics={metrics} />
+            </div>
+
+            <CleaningStats
+              stats={stats}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+            </section>
+<section id="downloads">
+            <DownloadPanel
+              cleanData={cleanData}
+              errors={errors}
+            />
+            </section>
+<section id="distribution">
+            <CountryChart
+              rows={cleanData}
+            />
+            <SplitDownload
+  rows={cleanData}
+/>
+
+            <PaymentChart
+              rows={cleanData}
+            />
+            </section>
+
+            <section id="preview">
+  <PreviewTable
+    rows={cleanData}
+  />
+</section>
+
+           <section id="errors">
+  <ErrorTable
+    errors={errors}
+  />
+</section>
+          </>
+        )}
+
+      </div>
+    </main>
   );
 }
